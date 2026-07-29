@@ -258,6 +258,17 @@ function renderTudo(){
     { label: 'Disponibilidade (%)', value: disponibPct !== null ? disponibPct.toFixed(1) + '%' : '-', sub: 'Frota disponível', accent: 'normal' },
     { label: 'Variação vs Ontem', value: (variacao >= 0 ? '+' : '') + variacao, sub: '▼ Ontem: ' + DADOS.emManutencaoOntem + ' veículos', accent: variacao > 0 ? 'critico' : 'normal' }
   ];
+
+  if(TIPO_SELECIONADO.size > 0){
+    const selecionados = DADOS.tipos.filter(t => TIPO_SELECIONADO.has(t.nome));
+    const totalSel = selecionados.reduce((s,t)=>s+t.qtd, 0);
+    kpiData.push({
+      label: 'Selecionado (' + TIPO_SELECIONADO.size + ' tipo' + (TIPO_SELECIONADO.size>1?'s':'') + ')',
+      value: totalSel,
+      sub: Array.from(TIPO_SELECIONADO).join(', '),
+      accent: 'blue'
+    });
+  }
   document.getElementById('kpiGrid').innerHTML = kpiData.map(function(k){
     return '<div class="panel kpi accent-' + k.accent + '">' +
       '<div class="eyebrow">' + k.label + '</div>' +
@@ -269,7 +280,7 @@ function renderTudo(){
   const totalTipos = DADOS.tipos.reduce((s,t)=>s+t.qtd, 0);
   document.getElementById('tipoBody').innerHTML = DADOS.tipos.map(function(t){
     const pct = totalTipos ? (t.qtd/totalTipos*100) : 0;
-    const selecionado = TIPO_SELECIONADO === t.nome;
+    const selecionado = TIPO_SELECIONADO.has(t.nome);
     return '<tr class="linha-tipo' + (selecionado ? ' selecionada' : '') + '" data-nome="' + t.nome.replace(/"/g,'&quot;') + '">' +
       '<td>' + t.nome + '</td><td class="num">' + t.qtd + '</td><td class="num">' + pct.toFixed(1) + '%</td></tr>';
   }).join('');
@@ -277,7 +288,7 @@ function renderTudo(){
 
   const maxQtd = Math.max(1, ...DADOS.tipos.map(t=>t.qtd));
   document.getElementById('barChart').innerHTML = DADOS.tipos.map(function(t){
-    const selecionado = TIPO_SELECIONADO === t.nome;
+    const selecionado = TIPO_SELECIONADO.has(t.nome);
     return '<div class="bar-row' + (selecionado ? ' selecionada' : '') + '" data-nome="' + t.nome.replace(/"/g,'&quot;') + '">' +
       '<div class="bar-label">' + t.nome + '</div>' +
       '<div class="bar-track"><div class="bar-fill' + (selecionado ? ' destacada' : '') + '" style="width:' + (t.qtd/maxQtd*100) + '%"></div></div>' +
@@ -286,7 +297,7 @@ function renderTudo(){
   }).join('');
 
   function alternarSelecao(nome){
-    TIPO_SELECIONADO = (TIPO_SELECIONADO === nome) ? null : nome;
+    if(TIPO_SELECIONADO.has(nome)) TIPO_SELECIONADO.delete(nome); else TIPO_SELECIONADO.add(nome);
     renderTudo();
   }
   document.querySelectorAll('.linha-tipo').forEach(function(tr){
@@ -297,7 +308,7 @@ function renderTudo(){
   });
 }
 
-let TIPO_SELECIONADO = null;
+let TIPO_SELECIONADO = new Set();
 
 carregarDados().then(function(){
   const statusEl = document.getElementById('statusMsg');
