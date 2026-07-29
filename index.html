@@ -62,16 +62,22 @@
   table{width:100%; border-collapse:collapse; font-size:13px;}
   thead th{text-align:left; padding:10px 12px; font-family:'IBM Plex Mono'; font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); border-bottom:1px solid var(--border);}
   tbody td{padding:10px 12px; border-bottom:1px solid var(--border);}
+  .linha-tipo{cursor:pointer; transition:background .15s ease;}
+  .linha-tipo:hover{background:rgba(255,255,255,0.03);}
+  .linha-tipo.selecionada{background:var(--blue-dim); box-shadow:0 0 0 1px var(--blue) inset;}
   tbody tr:last-child td{border-bottom:none;}
   td.num{font-family:'IBM Plex Mono'; text-align:right;}
   tfoot td{padding:10px 12px; font-family:'IBM Plex Mono'; font-weight:700; border-top:2px solid var(--border); background:var(--panel-2); text-align:left;}
   tfoot td.num{text-align:right;}
 
-  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:14px; cursor:pointer; border-radius:4px; padding:4px 6px; margin-left:-6px; margin-right:-6px; transition:background .15s ease;}
+  .bar-row:hover{background:rgba(255,255,255,0.03);}
+  .bar-row.selecionada{background:var(--blue-dim); box-shadow:0 0 0 1px var(--blue) inset;}
   .bar-row:last-child{margin-bottom:0;}
   .bar-label{width:120px; flex-shrink:0; font-size:12px; color:var(--text-muted); text-align:right;}
   .bar-track{flex:1; height:20px; background:var(--panel-2); border-radius:3px; overflow:hidden; position:relative;}
   .bar-fill{height:100%; background:linear-gradient(90deg, var(--blue-dim), var(--blue)); border-radius:3px;}
+  .bar-fill.destacada{background:linear-gradient(90deg, var(--blue), #7FBBFF); box-shadow:0 0 8px rgba(59,130,246,0.6);}
   .bar-value{width:34px; flex-shrink:0; font-family:'IBM Plex Mono'; font-size:12px; color:var(--text);}
 
   .status-msg{font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-dim);}
@@ -263,19 +269,35 @@ function renderTudo(){
   const totalTipos = DADOS.tipos.reduce((s,t)=>s+t.qtd, 0);
   document.getElementById('tipoBody').innerHTML = DADOS.tipos.map(function(t){
     const pct = totalTipos ? (t.qtd/totalTipos*100) : 0;
-    return '<tr><td>' + t.nome + '</td><td class="num">' + t.qtd + '</td><td class="num">' + pct.toFixed(1) + '%</td></tr>';
+    const selecionado = TIPO_SELECIONADO === t.nome;
+    return '<tr class="linha-tipo' + (selecionado ? ' selecionada' : '') + '" data-nome="' + t.nome.replace(/"/g,'&quot;') + '">' +
+      '<td>' + t.nome + '</td><td class="num">' + t.qtd + '</td><td class="num">' + pct.toFixed(1) + '%</td></tr>';
   }).join('');
   document.getElementById('tipoFoot').innerHTML = '<tr><td>TOTAL</td><td class="num">' + totalTipos + '</td><td class="num">100%</td></tr>';
 
   const maxQtd = Math.max(1, ...DADOS.tipos.map(t=>t.qtd));
   document.getElementById('barChart').innerHTML = DADOS.tipos.map(function(t){
-    return '<div class="bar-row">' +
+    const selecionado = TIPO_SELECIONADO === t.nome;
+    return '<div class="bar-row' + (selecionado ? ' selecionada' : '') + '" data-nome="' + t.nome.replace(/"/g,'&quot;') + '">' +
       '<div class="bar-label">' + t.nome + '</div>' +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + (t.qtd/maxQtd*100) + '%"></div></div>' +
+      '<div class="bar-track"><div class="bar-fill' + (selecionado ? ' destacada' : '') + '" style="width:' + (t.qtd/maxQtd*100) + '%"></div></div>' +
       '<div class="bar-value mono">' + t.qtd + '</div>' +
       '</div>';
   }).join('');
+
+  function alternarSelecao(nome){
+    TIPO_SELECIONADO = (TIPO_SELECIONADO === nome) ? null : nome;
+    renderTudo();
+  }
+  document.querySelectorAll('.linha-tipo').forEach(function(tr){
+    tr.addEventListener('click', function(){ alternarSelecao(tr.dataset.nome); });
+  });
+  document.querySelectorAll('.bar-row').forEach(function(br){
+    br.addEventListener('click', function(){ alternarSelecao(br.dataset.nome); });
+  });
 }
+
+let TIPO_SELECIONADO = null;
 
 carregarDados().then(function(){
   const statusEl = document.getElementById('statusMsg');
