@@ -131,6 +131,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
 const SPREADSHEET_ID = '1Bk1LEYRj--LbEZx7gs8CMOlrR4kUcpVp';
+// A planilha exporta a data no formato da localidade dela (ex.: 10/7/2026 = 7 de outubro).
+// Escolhe a leitura (dia/mês ou mês/dia) mais próxima de hoje e mostra sempre dd/mm/aaaa.
+function dataBR(t){
+  const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t||'');if(!m)return t;
+  const a=+m[1],b=+m[2],y=+m[3],hoje=Date.now(),op=[];
+  if(a<=12&&b<=31)op.push(new Date(y,a-1,b));
+  if(b<=12&&a<=31)op.push(new Date(y,b-1,a));
+  if(!op.length)return t;
+  op.sort((x,z)=>Math.abs(x-hoje)-Math.abs(z-hoje));const x=op[0];
+  return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'/'+x.getFullYear();
+}
 const GID = '239753060';
 
 function csvUrl(gid){
@@ -245,7 +256,7 @@ async function carregarDados(){
 }
 
 function renderTudo(){
-  document.getElementById('metaData').textContent = DADOS.dataRef || '-';
+  document.getElementById('metaData').textContent = dataBR(DADOS.dataRef) || '-';
   document.getElementById('metaHora').textContent = DADOS.horaRef || '-';
 
   const disponibPct = DADOS.frotaTotal ? ((DADOS.frotaTotal - DADOS.emManutencao) / DADOS.frotaTotal * 100) : null;
